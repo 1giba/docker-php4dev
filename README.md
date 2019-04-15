@@ -1,6 +1,6 @@
 ## dockerp
 
-A lightweight images set of docker for laravel applications based on [codecasts/php-alpine](https://github.com/codecasts/php-alpine).
+A lightweight images set of docker for php applications based on [codecasts/php-alpine](https://github.com/codecasts/php-alpine).
 
 ### Used Images
 
@@ -225,4 +225,37 @@ Access bash from `mysql-laravel-app`:
 
 ```sh
 docker exec -ti --user docker mysql-laravel-app bash
+```
+
+### Create a custom image
+
+To create a custom image, set the environment variables:
+
+```sh
+docker run -d \
+    --name custom-app \
+    --volume /path/to/app/root:/var/www \
+     -e "PGID=1000"
+     -e "PUID=1000"
+     -e "DEV_GROUP=nginx"
+     -e "DEV_USER=nginx"
+     -e "NGINX_SERVER_NAME=custom-app.dev.local"
+     -e "NGINX_DOCUMENT_ROOT=/var/www/public"
+     -e "NGINX_WORKER_PROCESSES=1"
+     -e "NGINX_WORKER_CONNECTIONS=1024"
+     -e "NGINX_KEEPALIVE_TIMEOUT=65"
+     -e "NGINX_EXPOSE_VERSION=off"
+     -e "NGINX_CLIENT_BODY_BUFFER_SIZE=16k"
+     -e "NGINX_CLIENT_MAX_BODY_SIZE=1m"
+     -e "NGINX_LARGE_CLIENT_HEADER_BUFFERS='4 8k'"
+     -e "PHP_DEPS='php-pdo_mysql@php'"
+     -e "PHP_FPM_FAST_CGI=127.0.0.1:9000"
+     -e "TIMEZONE='UTC'"
+     -e "NODE_VERSION=8.15.1"
+     -e "YARN_VERSION=1.12.3"
+    -v /path/to/custom/app:/var/www
+    --ip 172.19.0.x \
+    --hostname custom-app.dev.local \
+    --net dev.local \
+    dockerp-7.x
 ```
