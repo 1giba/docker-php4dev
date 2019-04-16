@@ -118,9 +118,10 @@ RUN set -x \
         php-pdo@php \
         php-phar@php \
         php-session@php \
+        php-xdebug@php \
         php-xml@php \
         php-zlib@php \
-        ${PHP_DEPS} \
+        $PHP_DEPS \
 #
 # Create symlinks
 #
