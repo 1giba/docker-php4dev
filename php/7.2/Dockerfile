@@ -197,12 +197,8 @@ RUN set -x \
     && envsubst < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf \
     && envsubst < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf \
     && envsubst < /usr/local/etc/php-fpm.d/zz-docker.conf > /usr/local/etc/php-fpm.d/zz-docker.conf \
-    && if [[ $PHP_DEPS != *"php-mysqlnd"* ]]; \
-        rm /usr/lib/php7/modules/mysqlnd.so \
-    fi \
-    && if [[ $PHP_DEPS != *"php-pdo_mysql"* ]]; \
-        rm /usr/lib/php7/modules/pdo_mysql.so \
-    fi \
+    && if [[ $PHP_DEPS != *"php-mysqlnd"* ]]; then rm /etc/php7/conf.d/01_mysqlnd.ini; fi \
+    && if [[ $PHP_DEPS != *"php-pdo_mysql"* ]]; then rm /etc/php7/conf.d/02_pdo_mysql.ini; fi \
 #
 # Configure workspace
 #
