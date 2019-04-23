@@ -1,106 +1,89 @@
 #
-# Composer
+# Nginx
 #
-FROM composer:1.8 as composer
-
-RUN composer global require hirak/prestissimo
+FROM nginx:1.15-alpine
 
 #
 # Author
 #
-MAINTAINER "Gilberto Junior" <olamundo@gmail.com>
-
-#
-# Nginx
-#
-FROM nginx:1.15-alpine
+LABEL maintainer="Gilberto Junior <olamundo@gmail.com>"
 
 #
 # Add key
 #
 ADD https://dl.bintray.com/php-alpine/key/php-alpine.rsa.pub /etc/apk/keys/php-alpine.rsa.pub
 
+#
+# Copy scripts
+#
+COPY ./scripts/docker-nginx-change.sh /usr/bin/docker-nginx-change
+COPY ./scripts/docker-timezone-change.sh /usr/bin/docker-timezone-change
+COPY ./scripts/docker-user-create.sh /usr/bin/docker-user-create
+COPY ./scripts/docker-vhost-change.sh /usr/bin/docker-vhost-change
 
 #
-# Copy config files
+# Copy templates
 #
-COPY ./config/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY ./config/nginx/vhost.conf /etc/nginx/conf.d/default.conf
-COPY ./config/php/default.ini /usr/local/etc/php/conf.d/default.ini
-COPY ./config/php/custom.ini /usr/local/etc/php/conf.d/zzz_custom.ini
-COPY ./config/php/xdebug.ini /usr/local/etc/php/conf.d/zzz_xdebug.ini
-COPY ./config/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
-COPY ./config/supervisor/docker.ini /etc/supervisor.d/docker.ini
+COPY ./templates /templates
 
 #
 # Default values
 #
-ARG PGID=1000
-ARG PUID=1000
-ARG DEV_GROUP=docker
-ARG DEV_USER=docker
-ARG NGINX_SERVER_NAME=localhost
-ARG NGINX_DOCUMENT_ROOT="/var/www/public"
-ARG NGINX_WORKER_PROCESSES=1
-ARG NGINX_WORKER_CONNECTIONS=1024
-ARG NGINX_KEEPALIVE_TIMEOUT=65
-ARG NGINX_EXPOSE_VERSION=off
-ARG NGINX_CLIENT_BODY_BUFFER_SIZE=16k
-ARG NGINX_CLIENT_MAX_BODY_SIZE=1m
-ARG NGINX_LARGE_CLIENT_HEADER_BUFFERS="4 8k"
-ARG PHP_DEPS='php-pdo_mysql@php'
-ARG PHP_FPM_FAST_CGI=127.0.0.1:9000
-ARG TIMEZONE='UTC'
 ARG NODE_VERSION='8.15.1'
 ARG YARN_VERSION='1.12.3'
 
 #
 # Env vars
 #
-ENV PGID=${PGID}
-ENV PUID=${PUID}
-ENV DEV_GROUP=${DEV_GROUP}
-ENV DEV_USER=${DEV_USER}
-ENV NGINX_SERVER_NAME=${NGINX_SERVER_NAME}
-ENV NGINX_DOCUMENT_ROOT=${NGINX_DOCUMENT_ROOT}
-ENV NGINX_WORKER_PROCESSES=${NGINX_WORKER_PROCESSES}
-ENV NGINX_WORKER_CONNECTIONS=${NGINX_WORKER_CONNECTIONS}
-ENV NGINX_KEEPALIVE_TIMEOUT=${NGINX_KEEPALIVE_TIMEOUT}
-ENV NGINX_EXPOSE_VERSION=${NGINX_EXPOSE_VERSION}
-ENV NGINX_CLIENT_BODY_BUFFER_SIZE=${NGINX_CLIENT_BODY_BUFFER_SIZE}
-ENV NGINX_CLIENT_MAX_BODY_SIZE=${NGINX_CLIENT_MAX_BODY_SIZE}
-ENV NGINX_LARGE_CLIENT_HEADER_BUFFERS=${NGINX_LARGE_CLIENT_HEADER_BUFFERS}
-ENV PHP_DEPS=${PHP_DEPS}
-ENV TIMEZONE=${TIMEZONE}
-ENV NODE_VERSION=${NODE_VERSION}
-ENV YARN_VERSION=${YARN_VERSION}
-ENV ESCAPE='$'
+ENV PGID 1000
+ENV PUID 1000
+ENV DEV_GROUP docker
+ENV DEV_USER docker
+ENV NGINX_SERVER_NAME app.dev.local
+ENV NGINX_DOCUMENT_ROOT /var/www
+ENV NGINX_WORKER_PROCESSES auto
+ENV NGINX_WORKER_CONNECTIONS 1024
+ENV NGINX_KEEPALIVE_TIMEOUT 65
+ENV NGINX_EXPOSE_VERSION off
+ENV NGINX_CLIENT_BODY_BUFFER_SIZE 16k
+ENV NGINX_CLIENT_MAX_BODY_SIZE 1m
+ENV NGINX_LARGE_CLIENT_HEADER_BUFFERS "4 8k"
+ENV PHP_FPM_FAST_CGI 127.0.0.1:9000
+ENV NODE_VERSION ${NODE_VERSION}
+ENV YARN_VERSION ${YARN_VERSION}
+ENV TIMEZONE UTC
+ENV ESCAPE '$'
+ENV COMPOSER_ALLOW_SUPERUSER 1
 
 #
-# User
+# Create group and user
 #
 RUN set -x \
-    && addgroup -g ${PGID} ${DEV_GROUP} \
-    && adduser -D -u ${PUID} -G ${DEV_GROUP} ${DEV_USER} \
+    && addgroup -g $PGID $DEV_USER \
+    && adduser -u $PUID -D -G $DEV_GROUP $DEV_USER \
 #
-# Install Common
+# Install Libs
 #
     && apk add --no-cache \
         bash \
-        git \
         curl \
+        supervisor \
+        git \
         gettext \
         tzdata \
-        supervisor \
+        libjpeg-turbo \
+        libxml2 \
+#
+# Configure timezone
+#
     && cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime \
     && echo $TIMEZONE > /etc/timezone \
     && apk del tzdata \
 #
-# Redirect output
+# Redirect output to container
 #
     && ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log \
-
 #
 # Install PHP
 #
@@ -121,7 +104,6 @@ RUN set -x \
         php-xdebug@php \
         php-xml@php \
         php-zlib@php \
-        $PHP_DEPS \
 #
 # Create symlinks
 #
@@ -129,6 +111,22 @@ RUN set -x \
     && ln -sf /usr/bin/php7 /usr/bin/php \
     && ln -sf /usr/sbin/php-fpm7 /usr/bin/php-fpm \
     && ln -sf /usr/lib/php7 /usr/lib/php \
+#
+# Install composer
+#
+    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer  \
+    && composer global require hirak/prestissimo \
+#
+# Configure nginx & php
+#
+    && envsubst < /templates/nginx.conf.tpl > /etc/nginx/nginx.conf \
+    && envsubst < /templates/nginx.host.tpl > /etc/nginx/conf.d/default.conf \
+    && envsubst < /templates/php.custom.ini.tpl > /etc/php/conf.d/custom.ini \
+    && envsubst < /templates/php-fpm.d.tpl > /etc/php/php-fpm.d/zz-docker.conf \
+#
+# Create workdir
+#
+    && mkdir -p /var/www \
 #
 # Install Node
 #
@@ -190,32 +188,24 @@ RUN set -x \
     && ln -s /opt/yarn-v$YARN_VERSION/bin/yarn /usr/local/bin/yarn \
     && ln -s /opt/yarn-v$YARN_VERSION/bin/yarnpkg /usr/local/bin/yarnpkg \
     && rm yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz \
-    && apk del .build-deps-yarn \
+    && apk del .build-deps-yarn libstdc++ \
 #
-# Configure nginx & php
+# Create a php file
 #
-    && envsubst < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf \
-    && envsubst < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf \
-    && envsubst < /usr/local/etc/php-fpm.d/zz-docker.conf > /usr/local/etc/php-fpm.d/zz-docker.conf \
-    && if [[ $PHP_DEPS != *"php-mysqlnd"* ]]; then rm /etc/php7/conf.d/01_mysqlnd.ini; fi \
-    && if [[ $PHP_DEPS != *"php-pdo_mysql"* ]]; then rm /etc/php7/conf.d/02_pdo_mysql.ini; fi \
-#
-# Configure workspace
-#
+    && echo "<?php phpinfo();" > /var/www/index.php  \
     && chown -R ${DEV_USER}:${DEV_GROUP} /home/${DEV_USER} \
-    && mkdir -p /var/www \
     && chown -R ${DEV_USER}:${DEV_GROUP} /var/www \
 #
 # Clear
 #
-    && apk del libstdc++ \
     && rm -rf /tmp/* /var/cache/apk/* /usr/share/man
 
 #
-# Copy composer and prestissimo lib
+# Copy configs
 #
-COPY --from=composer /usr/bin/composer /usr/bin/composer
-COPY --from=composer /tmp /home/docker/.composer
+COPY ./config/home/.bashrc /tmp/.bashrc
+COPY ./config/php/xdebug.ini /etc/php7/conf.d/xdebug.ini
+COPY ./config/supervisor/docker.ini /etc/supervisor.d/docker.ini
 
 #
 # Init
