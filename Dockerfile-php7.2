@@ -89,7 +89,6 @@ RUN set -x \
 # Install PHP
 #
     && echo "@php https://dl.bintray.com/php-alpine/v3.8/php-7.2" >> /etc/apk/repositories \
-    && echo "PHP_VERSION: $PHP_VERSION" \
     && apk update \
     && apk add --no-cache \
         php@php \

@@ -4,7 +4,7 @@ A lightweight images set of docker for php applications based on [codecasts/php-
 
 ## From Hub Docker
 
-To view available images, [click here](https://hub.docker.com/r/php4all/php4dev).
+To view available images, [click here](https://hub.docker.com/r/php4all/docker-php4dev).
 
 To pull lastest image, run:
 
