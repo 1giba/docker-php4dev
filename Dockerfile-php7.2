@@ -96,6 +96,7 @@ RUN set -x \
         php-dom@php \
         php-fpm@php \
         php-gettext@php \
+        php-iconv@php \
         php-json@php \
         php-mbstring@php \
         php-openssl@php \
@@ -204,7 +205,8 @@ RUN set -x \
 #
 # Copy configs
 #
-COPY ./config/home/.bashrc /tmp/.bashrc
+COPY ./config/home/.bashrc /templates/.bashrc
+COPY ./config/home/.bashrc /home/${DEV_USER}/.bashrc
 COPY ./config/php/xdebug.ini /etc/php7/conf.d/xdebug.ini
 COPY ./config/supervisor/docker.ini /etc/supervisor.d/docker.ini
 
