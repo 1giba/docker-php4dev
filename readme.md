@@ -1,6 +1,6 @@
 # Docker - PHP for Developers
 
-A lightweight images set of docker for php applications based on [codecasts/php-alpine](https://github.com/codecasts/php-alpine).
+Dockerfile for php applications based on [codecasts/php-alpine](https://github.com/codecasts/php-alpine).
 
 ## From Hub Docker
 
