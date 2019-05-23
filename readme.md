@@ -6,18 +6,18 @@ See the official documentation for installing/configuring php dependencies.
 
 ## From Hub Docker
 
-To view available images, [click here](https://hub.docker.com/r/php4all/docker-php4dev).
+To view available images, [click here](https://hub.docker.com/r/php4all/php4dev).
 
 To pull lastest image, run:
 
 ```sh
-docker pull php4all/docker-php4dev
+docker pull php4all/php4dev
 ```
 
 To pull other image, add the required version of php:
 
 ```sh
-docker pull php4all/docker-php4dev:7.2
+docker pull php4all/php4dev:7.2
 ```
 
 ### Avaliable PHP Versions
@@ -44,7 +44,7 @@ Clone or download zip and extract to some path.
 To create a docker image with php 7.3, run:
 
 ```sh
-docker build -t php4all/docker-php4dev -f ./php/7.3/Dockerfile .
+docker build -t php4all/php4dev -f ./php/7.3/Dockerfile .
 ```
 
 ### PHP 7.2 Image
@@ -52,7 +52,7 @@ docker build -t php4all/docker-php4dev -f ./php/7.3/Dockerfile .
 To create a docker image with php 7.2, run:
 
 ```sh
-docker build -t php4all/docker-php4dev:7.2 -f ./php/7.2/Dockerfile .
+docker build -t php4all/php4dev:7.2 -f ./php/7.2/Dockerfile .
 ```
 
 ## Test container
@@ -60,7 +60,7 @@ docker build -t php4all/docker-php4dev:7.2 -f ./php/7.2/Dockerfile .
 Execute the command:
 
 ```sh
-docker run -d -p 8080:80 php4all/docker-php4dev
+docker run -d -p 8080:80 php4all/php4dev
 ```
 
 And access in your browser:
@@ -80,7 +80,7 @@ docker run -d \
         -e NGINX_SERVER_NAME=example-app.com \
         -e NGINX_DOCUMENT_ROOT=/var/www/html/public \
         -e TIMEZONE=America/Sao_Paulo \
-    php4all/docker-php4dev
+    php4all/php4dev
 ```
 
 I hope you enjoy it.
