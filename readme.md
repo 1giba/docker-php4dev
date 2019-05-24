@@ -28,6 +28,7 @@ docker pull php4all/php4dev:7.2
 **Techonologies:**
 
 * Alpine 3.9
+* Nginx 1.16.0
 * Composer 1.8.5
 * Node 12.3.0
 * Yarn 1.16.0
