@@ -1,7 +1,8 @@
 #
-# Official PHP Image
+# Base Image
+# @see https://hub.docker.com/r/php4all/php:7.2
 #
-FROM php:7.2-fpm-alpine3.9
+FROM php4all/php:7.2
 
 #
 # Author
@@ -9,110 +10,31 @@ FROM php:7.2-fpm-alpine3.9
 LABEL maintainer="Gilberto Junior <olamundo@gmail.com>"
 
 #
-# Copy scripts
-#
-COPY ./scripts/docker-entrypoint.sh /docker-entrypoint.sh
-
-#
-# Copy templates
-#
-COPY ./templates /templates
-
-#
 # Default values
 #
-ARG NGINX_VERSION=1.16.0
-ARG NGINX_NJS_VERSION=0.3.1
-ARG NGINX_PKG_RELEASE=1
 ARG NODE_VERSION=12.3.0
 ARG YARN_VERSION=1.16.0
 
 #
 # Env vars
 #
-ENV PGID=1000 \
-    PUID=1000 \
-    DEV_GROUP=www-data \
-    DEV_USER=www-data \
-    NGINX_SERVER_NAME=localhost \
-    NGINX_DOCUMENT_ROOT=/var/www/html \
-    NGINX_WORKER_PROCESSES=auto \
-    NGINX_WORKER_CONNECTIONS=1024 \
-    NGINX_KEEPALIVE_TIMEOUT=65 \
-    NGINX_EXPOSE_VERSION=off \
-    NGINX_CLIENT_BODY_BUFFER_SIZE=16k \
-    NGINX_CLIENT_MAX_BODY_SIZE=1m \
-    NGINX_LARGE_CLIENT_HEADER_BUFFERS="4 8k" \
-    PHP_FPM_FAST_CGI=127.0.0.1:9000 \
-    NGINX_VERSION=${NGINX_VERSION} \
-    NGINX_NJS_VERSION=${NGINX_NJS_VERSION} \
-    NGINX_PKG_RELEASE=${NGINX_PKG_RELEASE} \
-    NODE_VERSION=${NODE_VERSION} \
+ENV NODE_VERSION=${NODE_VERSION} \
     YARN_VERSION=${YARN_VERSION} \
-    TIMEZONE=UTC \
-    ESCAPE="$" \
     COMPOSER_ALLOW_SUPERUSER=1
 
+RUN set -xe \
 #
-# Install Libs
+# Install XDEBUG
 #
-RUN apk add --no-cache \
-        bash \
-        ca-certificates \
-        curl \
-        git \
-        gettext \
-        libjpeg-turbo \
-        libxml2 \
-        supervisor \
-        tzdata \
-#
-# Configure TIMEZONE
-#
-    && cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime \
-    && echo $TIMEZONE > /etc/timezone \
+    && apk --no-cache add --virtual .build-deps $PHPIZE_DEPS \
+    && pecl install xdebug \
+    && docker-php-ext-enable xdebug \
+    && apk del .build-deps \
 #
 # Install composer
 #
     && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer  \
     && composer global require hirak/prestissimo \
-#
-# Install Nginx
-#
-    && set -x \
-    && KEY_SHA512="e7fa8303923d9b95db37a77ad46c68fd4755ff935d0a534d26eba83de193c76166c68bfe7f65471bf8881004ef4aa6df3e34689c305662750c0172fca5d8552a *stdin" \
-    && apk add --no-cache --virtual .cert-deps \
-        openssl \
-    && curl -o /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub \
-    && if [ "$(openssl rsa -pubin -in /tmp/nginx_signing.rsa.pub -text -noout | openssl sha512 -r)" = "$KEY_SHA512" ]; then \
-         echo "key verification succeeded!"; \
-         mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/; \
-       else \
-         echo "key verification failed!"; \
-         exit 1; \
-       fi \
-    && printf "%s%s%s\n" \
-        "http://nginx.org/packages/alpine/v" \
-        `egrep -o '^[0-9]+\.[0-9]+' /etc/alpine-release` \
-        "/main" \
-    | tee -a /etc/apk/repositories \
-    && apk del .cert-deps \
-    && NGINX_PACKAGES=" \
-        nginx=${NGINX_VERSION}-r${NGINX_PKG_RELEASE} \
-        nginx-module-xslt=${NGINX_VERSION}-r${NGINX_PKG_RELEASE} \
-        nginx-module-geoip=${NGINX_VERSION}-r${NGINX_PKG_RELEASE} \
-        nginx-module-image-filter=${NGINX_VERSION}-r${NGINX_PKG_RELEASE} \
-        nginx-module-njs=${NGINX_VERSION}.${NGINX_NJS_VERSION}-r${NGINX_PKG_RELEASE} \
-    " \
-    && apk add --no-cache $NGINX_PACKAGES \
-    && if [ -n "$tempDir" ]; then rm -rf "$tempDir"; fi \
-    && if [ -n "/etc/apk/keys/abuild-key.rsa.pub" ]; then rm -f /etc/apk/keys/abuild-key.rsa.pub; fi \
-    && if [ -n "/etc/apk/keys/nginx_signing.rsa.pub" ]; then rm -f /etc/apk/keys/nginx_signing.rsa.pub; fi \
-#
-# Forward request and error logs to docker log collector
-#
-    && ln -sf /dev/stdout /var/log/nginx/access.log \
-    && ln -sf /dev/stderr /var/log/nginx/error.log \
 #
 # Install Node
 #
@@ -180,23 +102,10 @@ RUN apk add --no-cache \
     && rm yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz \
     && apk del .build-deps-yarn \
 #
-# Create a php file and configure nginx
+# PHP.ini
 #
-    && echo "<?php phpinfo();" > /var/www/html/index.php  \
+    && rm /usr/local/etc/php/php.ini \
     && cp /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini \
-    && chown -R ${DEV_USER}:${DEV_GROUP} /var/www/html \
-#
-# Change config files
-#
-    && envsubst < /templates/nginx.conf.tpl > /etc/nginx/nginx.conf \
-    && envsubst < /templates/nginx.host.tpl > /etc/nginx/conf.d/default.conf \
-    && envsubst < /templates/php.custom.ini.tpl > /usr/local/etc/php/conf.d/custom.ini \
-    && envsubst < /templates/nginx.conf.tpl > /etc/nginx/nginx.conf \
-    && envsubst < /templates/nginx.host.tpl > /etc/nginx/conf.d/default.conf \
-#
-# Create
-#
-    && chmod +x /docker-entrypoint.sh \
 #
 # Clear
 #
@@ -205,17 +114,4 @@ RUN apk add --no-cache \
 #
 # Copy configs
 #
-COPY ./config/home/.bashrc /templates/.bashrc
 COPY ./config/php/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
-COPY ./config/supervisor/docker.ini /etc/supervisor.d/docker.ini
-
-#
-# Init
-#
-WORKDIR /var/www/html
-
-EXPOSE 80
-
-STOPSIGNAL SIGTERM
-
-CMD ["/docker-entrypoint.sh"]

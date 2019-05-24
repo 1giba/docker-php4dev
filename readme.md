@@ -29,6 +29,7 @@ docker pull php4all/php4dev:7.2
 
 * Alpine 3.9
 * Nginx 1.16.0
+* XDebug 2.7.2
 * Composer 1.8.5
 * Node 12.3.0
 * Yarn 1.16.0
@@ -76,11 +77,12 @@ The environment variables below can be changed:
 docker run -d \
         -e PGID=1000 \
         -e PUID=1000 \
-        -e DEV_GROUP=docker \
-        -e DEV_USER=docker \
+        -e GROUP_NAME=docker \
+        -e USER_NAME=docker \
         -e NGINX_SERVER_NAME=example-app.com \
         -e NGINX_DOCUMENT_ROOT=/var/www/html/public \
         -e TIMEZONE=America/Sao_Paulo \
+        -v /path/to/project:/var/www/html
     php4all/php4dev
 ```
 
@@ -88,4 +90,4 @@ I hope you enjoy it.
 
 ---
 
-> [1giba](https://github.com/1giba)
+> [1giba](https://github.com/1giba/docker-php4dev)
