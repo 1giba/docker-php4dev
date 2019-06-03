@@ -12,7 +12,7 @@ LABEL maintainer="Gilberto Junior <olamundo@gmail.com>"
 #
 # Default values
 #
-ARG NODE_VERSION=12.3.0
+ARG NODE_VERSION=12.3.1
 ARG YARN_VERSION=1.16.0
 
 #
