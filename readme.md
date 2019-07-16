@@ -22,18 +22,18 @@ docker pull php4all/php4dev:7.2
 
 ### Avaliable PHP Versions
 
-* php 7.3.6;
-* php 7.2.19.
+* php 7.3.7;
+* php 7.2.20.
 
 **Techonologies:**
 
-* Alpine 3.9
+* Alpine 3.10
 * Nginx 1.16.0
 * XDebug 2.7.2
-* Composer 1.8.5
-* Node 12.3.1
+* Composer 1.8.6
+* Node 12.6.0
 * Yarn 1.16.0
-* Supervisor 3.3.4
+* Supervisor 3.3.5
 
 ## From Sources
 
