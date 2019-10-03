@@ -11,7 +11,7 @@ To view available images, [click here](https://hub.docker.com/r/php4all/php4dev)
 To pull lastest image, run:
 
 ```sh
-docker pull php4all/php4dev
+docker pull php4all/php4dev:7.3
 ```
 
 To pull other image, add the required version of php:
@@ -22,17 +22,17 @@ docker pull php4all/php4dev:7.2
 
 ### Avaliable PHP Versions
 
-* php 7.3.7;
-* php 7.2.20.
+* php 7.3.10;
+* php 7.2.23.
 
 **Techonologies:**
 
 * Alpine 3.10
-* Nginx 1.16.0
+* Nginx 1.16.1
 * XDebug 2.7.2
 * Composer 1.8.6
-* Node 12.6.0
-* Yarn 1.16.0
+* Node 12.10.0
+* Yarn 1.17.3
 * Supervisor 3.3.5
 
 ## From Sources
@@ -71,7 +71,7 @@ And access in your browser:
 
 ### Customization
 
-The environment variables below can be changed:
+The environment variables can be changed:
 
 ```sh
 docker run -d \
