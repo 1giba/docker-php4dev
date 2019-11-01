@@ -82,7 +82,7 @@ docker run -d \
         -e NGINX_SERVER_NAME=example-app.com \
         -e NGINX_DOCUMENT_ROOT=/var/www/html/public \
         -e TIMEZONE=America/Sao_Paulo \
-        -v /path/to/project:/var/www/html
+        -v /path/to/project:/var/www/html \
     php4all/php4dev
 ```
 
